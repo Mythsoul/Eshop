@@ -28,7 +28,7 @@ export async function POST(request){
         
   
         // Validate address
-        if(!address || !address.fullName || !address.phoneNumber || !address.area || !address.city || !address.province) {
+        if(!address || !address.fullName || !address.area || !address.city || !address.province) {
             return NextResponse.json({success: false, message: "Complete address details are required"}, {status: 400})
         }
         // Find user first
@@ -128,7 +128,7 @@ export async function POST(request){
                 address: {
                     userId: userId,
                     fullName: address.fullName,
-                    PhoneNumber: address.phoneNumber, 
+                    PhoneNumber: address.PhoneNumber,
                     zipcode: address.zipcode,
                     area: address.area,
                     city: address.city,

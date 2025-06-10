@@ -21,7 +21,7 @@ export async function POST(request){
         const newAddress = new Address({
             userId,
             fullName: addressData.fullName,
-            phoneNumber: addressData.phoneNumber,
+            PhoneNumber: addressData.PhoneNumber,
             zipcode: addressData.zipcode,
             area: addressData.area,
             city: addressData.city,

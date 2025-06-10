@@ -1,46 +1,49 @@
-import { addressDummyData, assets } from "@/assets/assets";
-import { useAppContext } from "@/context/AppContext";
-import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import axios from "axios";
+"use client"
+
+import { useState, useEffect } from "react"
+import { useAppContext } from "@/context/AppContext"
+import toast from "react-hot-toast"
+import axios from "axios"
+import { MapPin, CreditCard, Tag, ShoppingBag, Plus, ChevronDown, Loader2 } from 'lucide-react'
 
 const OrderSummary = () => {
-
-  const { currency, router, getCartCount, getCartAmount, getToken, user, cartItems, setCartItems, products } = useAppContext()
-  const [selectedAddress, setSelectedAddress] = useState(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-
-  const [userAddresses, setUserAddresses] = useState([]);
-  const [totalShippingFee, setTotalShippingFee] = useState(0);
-  const [totalDeliveryCharge, setTotalDeliveryCharge] = useState(0);
+  const { currency, router, getCartCount, getCartAmount, getToken, user, cartItems, setCartItems, products } =
+    useAppContext()
+  const [selectedAddress, setSelectedAddress] = useState(null)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [selectedPayment, setSelectedPayment] = useState(null)
+  const [userAddresses, setUserAddresses] = useState([])
+  const [totalShippingFee, setTotalShippingFee] = useState(0)
+  const [totalDeliveryCharge, setTotalDeliveryCharge] = useState(0)
+  const [promoCode, setPromoCode] = useState("")
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false)
 
   const paymentMethods = [
-    { id: 'esewa', name: 'eSewa', image: assets.esewa.src },
-    { id: 'khalti', name: 'Khalti', image: assets.khalti.src },
-  ];
+    { id: "esewa", name: "eSewa", image: "/placeholder.svg?height=40&width=80", color: "from-green-500 to-green-600" },
+    { id: "khalti", name: "Khalti", image: "/placeholder.svg?height=40&width=80", color: "from-purple-500 to-purple-600" },
+  ]
 
   const fetchUserAddresses = async () => {
     try {
       const token = await getToken()
-      const {data} = await axios.get('/api/user/get-address', {headers:{Authorization: `Bearer ${token}`}})
-      if(data.success){
+      const { data } = await axios.get("/api/user/get-address", { headers: { Authorization: `Bearer ${token}` } })
+      if (data.success) {
         setUserAddresses(data.addresses)
         if (data.addresses.length > 0) {
-          setSelectedAddress(data.addresses[0]);
+          setSelectedAddress(data.addresses[0])
         }
       } else {
         toast.error(data.message)
       }
-    }catch(error){
+    } catch (error) {
       toast.error(error.message)
     }
   }
 
   const handleAddressSelect = (address) => {
-    setSelectedAddress(address);
-    setIsDropdownOpen(false);
-  };
+    setSelectedAddress(address)
+    setIsDropdownOpen(false)
+  }
 
   const createOrder = async () => {
     try {
@@ -52,223 +55,236 @@ const OrderSummary = () => {
         return toast.error("Please select a payment method")
       }
 
-      // Convert cart items object to array of items with quantity > 0
-      let cartItemsArray = [];
-      
-      // Safely process cart items and validate stock
-      if (cartItems && typeof cartItems === 'object') {
-        // Check stock availability before placing order
-        const insufficientStock = products.find(product => {
-          const quantity = cartItems[product._id] || 0;
-          return quantity > product.stock;
-        });
+      setIsPlacingOrder(true)
+
+      let cartItemsArray = []
+
+      if (cartItems && typeof cartItems === "object") {
+        const insufficientStock = products.find((product) => {
+          const quantity = cartItems[product._id] || 0
+          return quantity > product.stock
+        })
 
         if (insufficientStock) {
-          return toast.error(
-            `Only ${insufficientStock.stock} items available for ${insufficientStock.name}`
-          );
+          return toast.error(`Only ${insufficientStock.stock} items available for ${insufficientStock.name}`)
         }
 
-        cartItemsArray = Object.entries(cartItems).map(([id, quantity]) => ({
-          product: id,
-          quantity: Number(quantity)
-        })).filter(item => item.quantity > 0);
+        cartItemsArray = Object.entries(cartItems)
+          .map(([id, quantity]) => ({
+            product: id,
+            quantity: Number(quantity),
+          }))
+          .filter((item) => item.quantity > 0)
       }
-      
-      if(cartItemsArray.length === 0){
+
+      if (cartItemsArray.length === 0) {
         return toast.error("Your cart is empty")
       }
 
       const token = await getToken()
 
-      const response = await axios.post('/api/order/create', {
-        address: selectedAddress,  // Send the full address object
-        items: cartItemsArray,
-        paymentMethod: selectedPayment.id
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await axios.post(
+        "/api/order/create",
+        {
+          address: selectedAddress,
+          items: cartItemsArray,
+          paymentMethod: selectedPayment.id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      )
 
-      if(response.data.success){
+      if (response.data.success) {
         toast.success(response.data.message)
-        
-        // The cart is already cleared in the order creation API
-        // Just update the local state to reflect this
-        setCartItems({});
-        
-        // Navigate to order placed page
-        router.push('/order-placed')
+        setCartItems({})
+        router.push("/order-placed")
       } else {
         toast.error(response.data.message)
       }
-
-    } catch(error){
-      console.error('Error creating order:', error)
+    } catch (error) {
+      console.error("Error creating order:", error)
       toast.error(error.response?.data?.message || "Failed to create order")
+    } finally {
+      setIsPlacingOrder(false)
     }
-
   }
 
-  // Calculate shipping fee and delivery charge from products in cart
   const calculateFees = () => {
-    if (!products || !cartItems) return { shippingFee: 0, deliveryCharge: 0 };
-    
-    let shippingFee = 0;
-    let deliveryCharge = 0;
-    
+    if (!products || !cartItems) return { shippingFee: 0, deliveryCharge: 0 }
+
+    let shippingFee = 0
+    let deliveryCharge = 0
+
     Object.entries(cartItems).forEach(([productId, quantity]) => {
-      const product = products.find(p => p._id === productId);
+      const product = products.find((p) => p._id === productId)
       if (product) {
-        // Add shipping fee if available
         if (product.shippingFee) {
-          shippingFee += product.shippingFee * quantity;
+          shippingFee += product.shippingFee * quantity
         }
-        
-        // Add delivery charge if available
         if (product.deliveryCharge) {
-          deliveryCharge += product.deliveryCharge * quantity;
+          deliveryCharge += product.deliveryCharge * quantity
         }
       }
-    });
-    
-    return { shippingFee, deliveryCharge };
-  };
+    })
+
+    return { shippingFee, deliveryCharge }
+  }
 
   useEffect(() => {
-    fetchUserAddresses();
-    const { shippingFee, deliveryCharge } = calculateFees();
-    setTotalShippingFee(shippingFee);
-    setTotalDeliveryCharge(deliveryCharge);
+    fetchUserAddresses()
+    const { shippingFee, deliveryCharge } = calculateFees()
+    setTotalShippingFee(shippingFee)
+    setTotalDeliveryCharge(deliveryCharge)
   }, [products, cartItems])
 
   return (
-    <div className="w-full md:w-96 bg-gray-500/5 p-5">
-      <h2 className="text-xl md:text-2xl font-medium text-gray-700">
-        Order Summary
-      </h2>
-      <hr className="border-gray-500/30 my-5" />
+    <div className="w-full md:w-96 bg-white rounded-2xl shadow-lg border border-gray-100 p-6 h-fit">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
+          <ShoppingBag className="w-5 h-5 text-white" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900">Order Summary</h2>
+      </div>
+
       <div className="space-y-6">
+        {/* Address Selection */}
         <div>
-          <label className="text-base font-medium uppercase text-gray-600 block mb-2">
-            Select Address
+          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+            <MapPin className="w-4 h-4" />
+            Delivery Address
           </label>
-          <div className="relative inline-block w-full text-sm border">
+          <div className="relative">
             <button
-              className="peer w-full text-left px-4 pr-2 py-2 bg-white text-gray-700 focus:outline-none"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsDropdownOpen(!isDropdownOpen);
-              }}
+              className="w-full p-4 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 text-left transition-colors flex items-center justify-between"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             >
-              <span>
+              <span className="text-sm text-gray-700">
                 {selectedAddress
-                  ? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.city}, ${selectedAddress.province}`
+                  ? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.city}`
                   : "Select Address"}
               </span>
-              <svg className={`w-5 h-5 inline float-right transition-transform duration-200 ${isDropdownOpen ? "rotate-0" : "-rotate-90"}`}
-                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6B7280"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDown
+                className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {isDropdownOpen && (
-              <ul className="absolute w-full bg-white border shadow-md mt-1 z-10 py-1.5">
+              <div className="absolute w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-2 z-10 py-2 max-h-48 overflow-y-auto">
                 {userAddresses.map((address, index) => (
-                  <li
+                  <button
                     key={index}
-                    className="px-4 py-2 hover:bg-gray-500/10 cursor-pointer"
-                    onClick={(e) => {
-                  e.preventDefault();
-                  handleAddressSelect(address);
-                }}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors text-sm"
+                    onClick={() => handleAddressSelect(address)}
                   >
-                    {address.fullName}, {address.area}, {address.city}, {address.province}
-                  </li>
+                    <div className="font-medium text-gray-900">{address.fullName}</div>
+                    <div className="text-gray-600">
+                      {address.area}, {address.city}, {address.province}
+                    </div>
+                  </button>
                 ))}
-                <li
-                  onClick={(e) => {
-                  e.preventDefault();
-                  router.push("/add-address");
-                }}
-                  className="px-4 py-2 hover:bg-gray-500/10 cursor-pointer text-center"
+                <button
+                  onClick={() => router.push("/add-address")}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors text-sm text-orange-600 font-medium flex items-center gap-2"
                 >
-                  + Add New Address
-                </li>
-              </ul>
+                  <Plus className="w-4 h-4" />
+                  Add New Address
+                </button>
+              </div>
             )}
           </div>
         </div>
 
+        {/* Promo Code */}
         <div>
-          <label className="text-base font-medium uppercase text-gray-600 block mb-2">
+          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+            <Tag className="w-4 h-4" />
             Promo Code
           </label>
-          <div className="flex flex-col items-start gap-3">
+          <div className="flex gap-2">
             <input
               type="text"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
               placeholder="Enter promo code"
-              className="flex-grow w-full outline-none p-2.5 text-gray-600 border"
+              className="flex-1 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
             />
-            <button className="bg-orange-600 text-white px-9 py-2 hover:bg-orange-700">
+            <button className="px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium transition-colors text-sm">
               Apply
             </button>
           </div>
         </div>
 
-        <hr className="border-gray-500/30 my-5" />
-
-        <div className="mb-6">
-          <label className="text-base font-medium uppercase text-gray-600 block mb-3">
-            Select Payment Method
+        {/* Payment Method */}
+        <div>
+          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+            <CreditCard className="w-4 h-4" />
+            Payment Method
           </label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {paymentMethods.map((method) => (
               <button
                 key={method.id}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setSelectedPayment(method);
-                }}
-                className={`border rounded-lg flex items-center justify-center hover:border-orange-500 transition-colors h-24 ${selectedPayment?.id === method.id ? 'border-orange-500' : 'border-gray-200'}`}
+                onClick={() => setSelectedPayment(method)}
+                className={`p-4 border-2 rounded-xl transition-all duration-200 ${
+                  selectedPayment?.id === method.id
+                    ? "border-orange-500 bg-orange-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
               >
-                <img src={method.image} alt={method.name} className="w-[90%] h-[90%] object-contain" />
+                <img src={method.image || "/placeholder.svg"} alt={method.name} className="w-full h-8 object-contain" />
               </button>
             ))}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex justify-between text-base font-medium">
-            <p className="uppercase text-gray-600">Items {getCartCount()}</p>
-            <p className="text-gray-800">Rs. {getCartAmount()}</p>
+        {/* Order Details */}
+        <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Items ({getCartCount()})</span>
+            <span className="font-medium">Rs. {getCartAmount()}</span>
           </div>
-          <div className="flex justify-between">
-            <p className="text-gray-600">Shipping Fee</p>
-            <p className="font-medium text-gray-800">Rs. {totalShippingFee}</p>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Shipping Fee</span>
+            <span className="font-medium">Rs. {totalShippingFee}</span>
           </div>
-          <div className="flex justify-between">
-            <p className="text-gray-600">Delivery Charge</p>
-            <p className="font-medium text-gray-800">Rs. {totalDeliveryCharge}</p>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Delivery Charge</span>
+            <span className="font-medium">Rs. {totalDeliveryCharge}</span>
           </div>
-          <div className="flex justify-between text-lg md:text-xl font-medium border-t pt-3">
-            <p>Total</p>
-            <p>Rs. {getCartAmount() + totalShippingFee + totalDeliveryCharge}</p>
+          <div className="border-t border-gray-200 pt-3">
+            <div className="flex justify-between text-lg font-bold">
+              <span>Total</span>
+              <span className="text-orange-600">Rs. {getCartAmount() + totalShippingFee + totalDeliveryCharge}</span>
+            </div>
           </div>
         </div>
+
+        {/* Place Order Button */}
+        <button
+          onClick={createOrder}
+          disabled={isPlacingOrder}
+          className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-4 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+        >
+          {isPlacingOrder ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Placing Order...
+            </>
+          ) : (
+            <>
+              <ShoppingBag className="w-5 h-5" />
+              Place Order
+            </>
+          )}
+        </button>
       </div>
-
-      <button onClick={(e) => {
-        e.preventDefault();
-        createOrder();
-      }} className="w-full bg-orange-600 text-white py-3 mt-5 hover:bg-orange-700">
-        Place Order
-      </button>
     </div>
-  );
-};
+  )
+}
 
-export default OrderSummary;
+export default OrderSummary
+

@@ -15,7 +15,7 @@ import QRCode from "qrcode";
 import { Pencil, Trash2, Star } from 'lucide-react';
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
-import { useProducts } from "@/hooks/useProducts";
+import {useProduct} from "@/hooks/useProduct";
 
 // Separate component for product images
 const ProductImages = React.memo(({ images, mainImage, setMainImage }) => {
