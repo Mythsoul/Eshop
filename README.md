@@ -1,40 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🛍️ E-Shop - Modern E-commerce Platform
 
-## Getting Started
+## Overview
+E-Shop is a feature-rich e-commerce platform built with Next.js 14, offering a seamless shopping experience for customers and comprehensive management tools for sellers.
 
-First, run the development server:
+![E-Shop Platform](public/og.png)
 
+## ✨ Features
+
+### For Customers
+- 🛒 Intuitive shopping cart management
+- 🔐 Secure user authentication with Clerk
+- 📦 Order tracking and history
+- 💳 Multiple payment options (Khalti, eSewa)
+- 🏷️ Product categories and search
+- 📱 Fully responsive design
+
+### For Sellers
+- 📊 Comprehensive dashboard
+- 📝 Product management (CRUD operations)
+- 📈 Order management
+- 📦 Stock management
+- 💰 Sales tracking
+
+## 🚀 Tech Stack
+
+- **Frontend:** Next.js 14, React, TailwindCSS
+- **Backend:** Next.js API Routes
+- **Database:** MongoDB with Mongoose
+- **Authentication:** Clerk
+- **Payment Integration:** Khalti, eSewa
+- **Image Storage:** Cloudinary
+- **Background Jobs:** Inngest
+- **State Management:** React Context
+
+## 🛠️ Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Mythsoul/Eshop.git
+cd Eshop
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Set up environment variables:
+Create a .env file in the root directory with the following:
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+MONGODB_URI=your_mongodb_uri
+CLOUDINARY_CLOUD_NAME=your_cloudinary_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_secret
+```
+
+4. Run the development server:
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📁 Project Structure
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```
+eshop/
+├── app/                    # app directory
+├── components/            # Reusable React components
+├── context/              # React Context providers
+├── models/               # Mongoose models
+├── public/               # Static assets
+└── config/               # Configuration files
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-..
-## Learn More
+## 🔑 Key Features Implementation
 
-To learn more about Next.js, take a look at the following resources:
+### Authentication
+- Clerk-based authentication
+- Role-based access control (Admin, Seller, Customer)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Product Management
+- Create, update, delete products
+- Image upload with Cloudinary
+- Stock management
+- Category organization
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Order System
+- Cart management
+- Order processing
+- Payment integration
+- Order tracking
 
-## Deploy on Vercel
+## 🤝 Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# ttt
-# HH
-# HH
-# HH
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
+
